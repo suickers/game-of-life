@@ -6,8 +6,8 @@
 		<title>Rust Game of Life</title>
 		
 <script type="module">
-import init, * as bindings from '/game-of-life-311ab43a03d8b0df.js';
-const wasm = await init({ module_or_path: '/game-of-life-311ab43a03d8b0df_bg.wasm' });
+import init, * as bindings from '/game-of-life-8028bca5e15451e2.js';
+const wasm = await init({ module_or_path: '/game-of-life-8028bca5e15451e2_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -33,13 +33,17 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 				algin-items: center;
 			}		
 		</style>
-	<link rel="modulepreload" href="/game-of-life-311ab43a03d8b0df.js" crossorigin="anonymous" integrity="sha384-qMzRAeLa245E/E49p5lWHZQg/I3EnpdKHo1UTCiiNhbeRCr6m0vzlDL+k/AHi4/O"><link rel="preload" href="/game-of-life-311ab43a03d8b0df_bg.wasm" crossorigin="anonymous" integrity="sha384-Ht1pdzAvnE1l2O0CcaAQcRylUP4mtAbwM3F2SVEzyFOVkY5TqBjuW9oDuRvzpFOR" as="fetch" type="application/wasm"></head>
+	<link rel="modulepreload" href="/game-of-life-8028bca5e15451e2.js" crossorigin="anonymous" integrity="sha384-vslJ9vnsUlzR1Jsb3/4VxWys2Ikzy3F0ZuTLbe2Wkr0G20QA4VeNvuKDncETlikF"><link rel="preload" href="/game-of-life-8028bca5e15451e2_bg.wasm" crossorigin="anonymous" integrity="sha384-mtThlgTYr8UC+vd8TShZw04K7CVISQZbBCxZMf2q3Z3oYNIbrZpwA4clxil/9bcO" as="fetch" type="application/wasm"></head>
 
 	
 	<body>
 	
 		<p>Left click & drag to create new cells.</p>
 		<p>Right click & drag to kill cells.</p>
+		<button id="tool-paint">Paint</button>
+		<button id="tool-glider">Glider</button>
+		<button id="tool-exploder">Exploder</button>
+		<button id="tool-five-one-oval">Five by One Oval</button>
 		<div id="game-container">
 			<button id="play-pause">Pause</button>
 			<canvas id="game-of-life-canvas"></canvas>

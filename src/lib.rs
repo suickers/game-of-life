@@ -20,6 +20,18 @@ pub enum Cell {
 	Alive = 1,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum Pattern {
+	Glider,
+	SmallExploder,
+	FiveOneOval,
+}
+
+pub enum Tool {
+	Paint(Cell),
+	Stamp(Pattern),
+}
+
 #[wasm_bindgen]
 pub struct Universe {
 	width: u32,
@@ -99,6 +111,44 @@ impl Universe {
 			Cell::Dead => Cell::Alive,
 		}
 	}
+
+	fn pattern_offsets(pattern: Pattern) -> &'static [(i32, i32)] {
+		match pattern {
+			Pattern::Glider => &[
+				(1, 0),
+				(2, 1),
+				(0, 2), (1, 2), (2, 2),
+			],
+			Pattern::SmallExploder => &[
+				(0, 1),
+				(1, 0), (1, 1), (1, 2),
+				(2, 0), (2, 2),
+				(3, 1),
+			],
+			Pattern::FiveOneOval => &[
+				(1, 0), (2, 0), (3, 0), (4, 0), (5, 0),
+				(0, 1), (6, 1),
+				(1, 2), (2, 2), (3, 2), (4, 2), (5, 2),
+			],
+			// _ => todo!("finish implementing patterns"),
+		}
+	}
+
+	pub fn stamp(&mut self, pattern: Pattern, row: u32, col: u32) {
+		let h = self.height as i32;
+		let w = self.width as i32;
+		let base_r = row as i32;
+		let base_c = col as i32;
+
+		for (dx, dy) in Self::pattern_offsets(pattern) {
+			let r = base_r + dy;
+			let c = base_c + dx;
+			if r >= 0 && r < h && c >= 0 && c < w {
+				let idx = self.get_index(r as u32, c as u32);
+				self.cells[idx] = Cell::Alive;
+			}
+		}
+	}
 }
 
 #[wasm_bindgen]
@@ -166,7 +216,7 @@ pub fn start() -> Result<(), JsValue> {
 	let universe = Rc::new(RefCell::new(universe));
 	let ctx = Rc::new(ctx);
 
-	let uni_for_click = universe.clone();
+	// let uni_for_click = universe.clone();
 // 	let canvas_for_click = canvas.clone();
 	let cell_size_click = cell_size;
 // 
@@ -201,38 +251,7 @@ pub fn start() -> Result<(), JsValue> {
 	
 	let drag_mode: Rc<RefCell<Option<Cell>>> = Rc::new(RefCell::new(None));
 
-	// let uni_for_ptr = universe.clone();
-	// let canvas_for_ptr = canvas.clone();
-	// let drag_for_ptr = drag_mode.clone();
-	// let cell_size_ptr = cell_size;
-
-	let drag_for_down = drag_mode.clone();
 	
-	let on_pointer_down = Closure::wrap(Box::new(move |e: PointerEvent| {
-	
-		let paint_to = if e.button() == 2 { Cell::Dead } else { Cell::Alive };
-		*drag_for_down.borrow_mut() = Some(paint_to);
-
-		canvas_for_down.set_pointer_capture(e.pointer_id()).ok();
-
-		let rect = canvas_for_down
-			.dyn_ref::<web_sys::Element>().unwrap()
-			.get_bounding_client_rect();
-
-		let sx = canvas_for_down.width() as f64 / rect.width();
-		let sy = canvas_for_down.height() as f64 / rect.height();
-		
-		let x = (e.client_x() as f64 - rect.left()) * sx;
-		let y = (e.client_y() as f64 - rect.top()) * sy;
-		let col = (x / cell_size_click).floor() as u32;
-		let row = (y / cell_size_click).floor() as u32;
-
-		if row < uni_for_click.borrow().height && col < uni_for_click.borrow().width {
-			let mut u = uni_for_click.borrow_mut();
-			let idx = u.get_index(row, col);
-			u.cells[idx] = paint_to;
-		}
-	}) as Box<dyn FnMut(_)>);
 
 	let uni_for_move = universe.clone();
 	// let canvas_for_move = canvas.clone();
@@ -274,14 +293,7 @@ pub fn start() -> Result<(), JsValue> {
 		*drag_for_leave.borrow_mut() = None;
 	}) as Box<dyn FnMut(_)>);
 
-	canvas.set_onpointerdown(Some(on_pointer_down.as_ref().unchecked_ref()));
-	canvas.set_onpointermove(Some(on_pointer_move.as_ref().unchecked_ref()));
-	canvas.set_onpointerup(Some(on_pointer_up.as_ref().unchecked_ref()));
-	canvas.set_onpointerleave(Some(on_pointer_leave.as_ref().unchecked_ref()));
-	on_pointer_down.forget();
-	on_pointer_move.forget();
-	on_pointer_up.forget();
-	on_pointer_leave.forget();
+	
 
 	let canvas_for_ctx = canvas.clone();
 	let on_context_menu = Closure::wrap(Box::new(move |e: web_sys::Event| {
@@ -296,7 +308,52 @@ pub fn start() -> Result<(), JsValue> {
 		.dyn_into::<HtmlButtonElement>()?;
 
 	let running = Rc::new(RefCell::new(true));
+	let tool = Rc::new(RefCell::new(Tool::Paint(Cell::Alive)));
+	
+	let uni_for_down      = universe.clone();
+	// let canvas_for_ptr = canvas.clone();
+	// let drag_for_down     = drag_mode.clone();
+	// let cell_size_down    = cell_size;
+	let canvas_for_down   = canvas_for_down;
+	let tool_for_down     = tool.clone();
 
+	let drag_for_down = drag_mode.clone();
+	
+	let on_pointer_down = Closure::wrap(Box::new(move |e: PointerEvent| {
+	
+		let rect = canvas_for_down
+			.dyn_ref::<web_sys::Element>().unwrap()
+			.get_bounding_client_rect();
+
+		let sx = canvas_for_down.width() as f64 / rect.width();
+		let sy = canvas_for_down.height() as f64 / rect.height();
+		
+		let x = (e.client_x() as f64 - rect.left()) * sx;
+		let y = (e.client_y() as f64 - rect.top()) * sy;
+		let col = (x / cell_size_click).floor() as u32;
+		let row = (y / cell_size_click).floor() as u32;
+
+		if row >= uni_for_down.borrow().height || col >= uni_for_down.borrow().width {
+			return;
+		}
+
+		match *tool_for_down.borrow() {
+			Tool::Paint(_) => {
+				let paint_to = if e.button() == 2 { Cell::Dead } else { Cell::Alive };
+
+				*drag_for_down.borrow_mut() = Some(paint_to);
+
+				let mut u = uni_for_down.borrow_mut();
+				let idx = u.get_index(row, col);
+				u.cells[idx] = paint_to;
+			}
+			Tool::Stamp(pattern) => {
+				if e.button() == 0 {
+				uni_for_down.borrow_mut().stamp(pattern, row, col);
+				}
+			}
+		}
+	}) as Box<dyn FnMut(_)>);
 	let running_for_click = running.clone();
 	let button_for_click = button.clone();
 	let on_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
@@ -305,10 +362,67 @@ pub fn start() -> Result<(), JsValue> {
 		button_for_click.set_text_content(Some(if *r { "Pause" } else { "Play" }));
 	}) as Box<dyn FnMut(_)>);
 
+
+	canvas.set_onpointerdown(Some(on_pointer_down.as_ref().unchecked_ref()));
+	canvas.set_onpointermove(Some(on_pointer_move.as_ref().unchecked_ref()));
+	canvas.set_onpointerup(Some(on_pointer_up.as_ref().unchecked_ref()));
+	canvas.set_onpointerleave(Some(on_pointer_leave.as_ref().unchecked_ref()));
+	on_pointer_down.forget();
+	on_pointer_move.forget();
+	on_pointer_up.forget();
+	on_pointer_leave.forget();
 	
 	button.set_onclick(Some(on_click.as_ref().unchecked_ref()));
 	on_click.forget();
 
+
+	let paint_btn = document
+		.get_element_by_id("tool-paint")
+		.unwrap()
+		.dyn_into::<HtmlButtonElement>()?;
+	let glider_btn = document
+		.get_element_by_id("tool-glider")
+		.unwrap()
+		.dyn_into::<HtmlButtonElement>()?;
+	let exploder_btn = document
+		.get_element_by_id("tool-exploder")
+		.unwrap()
+		.dyn_into::<HtmlButtonElement>()?;
+	let five_one_oval_btn = document
+		.get_element_by_id("tool-five-one-oval")
+		.unwrap()
+		.dyn_into::<HtmlButtonElement>()?;
+
+
+	let tool_for_paint = tool.clone();
+	let on_paint_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
+		*tool_for_paint.borrow_mut() = Tool::Paint(Cell::Alive);
+	}) as Box<dyn FnMut(_)>);
+	paint_btn.set_onclick(Some(on_paint_click.as_ref().unchecked_ref()));
+	on_paint_click.forget();
+
+	
+	let tool_for_glider = tool.clone();
+	let on_glider_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
+		*tool_for_glider.borrow_mut() = Tool::Stamp(Pattern::Glider);
+	}) as Box<dyn FnMut(_)>);
+	glider_btn.set_onclick(Some(on_glider_click.as_ref().unchecked_ref()));
+	on_glider_click.forget();
+	
+
+	let tool_for_exploder = tool.clone();
+	let on_exploder_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
+		*tool_for_exploder.borrow_mut() = Tool::Stamp(Pattern::SmallExploder);
+	}) as Box<dyn FnMut(_)>);
+	exploder_btn.set_onclick(Some(on_exploder_click.as_ref().unchecked_ref()));
+	on_exploder_click.forget();
+
+	let tool_for_five_one_oval = tool.clone();
+	let on_five_one_oval_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
+		*tool_for_five_one_oval.borrow_mut() = Tool::Stamp(Pattern::FiveOneOval);
+	}) as Box<dyn FnMut(_)>);
+	five_one_oval_btn.set_onclick(Some(on_five_one_oval_click.as_ref().unchecked_ref()));
+	on_five_one_oval_click.forget();
 	
 	let raf_handle: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
 	let raf_handle_clone = raf_handle.clone();

@@ -213,20 +213,20 @@ export function start() {
     wasm.start();
 }
 
-function wasm_bindgen__convert__closures_____invoke__h60ce18e4d050aa26(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h60ce18e4d050aa26(arg0, arg1, arg2);
+function wasm_bindgen__convert__closures_____invoke__hae4ba9387fa97f39(arg0, arg1) {
+    wasm.wasm_bindgen__convert__closures_____invoke__hae4ba9387fa97f39(arg0, arg1);
 }
 
 function wasm_bindgen__convert__closures_____invoke__hfece6e17b28bb9f6(arg0, arg1, arg2) {
     wasm.wasm_bindgen__convert__closures_____invoke__hfece6e17b28bb9f6(arg0, arg1, arg2);
 }
 
-function wasm_bindgen__convert__closures_____invoke__hae4ba9387fa97f39(arg0, arg1) {
-    wasm.wasm_bindgen__convert__closures_____invoke__hae4ba9387fa97f39(arg0, arg1);
-}
-
 function wasm_bindgen__convert__closures_____invoke__hf406adea2cacb387(arg0, arg1, arg2) {
     wasm.wasm_bindgen__convert__closures_____invoke__hf406adea2cacb387(arg0, arg1, arg2);
+}
+
+function wasm_bindgen__convert__closures_____invoke__h60ce18e4d050aa26(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h60ce18e4d050aa26(arg0, arg1, arg2);
 }
 
 /**
@@ -332,6 +332,9 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbg__wbg_cb_unref_2454a539ea5790d9 = function(arg0) {
         arg0._wbg_cb_unref();
+    };
+    imports.wbg.__wbg_beginPath_ae4169e263573dcd = function(arg0) {
+        arg0.beginPath();
     };
     imports.wbg.__wbg_button_cd095d6d829d3270 = function(arg0) {
         const ret = arg0.button;
@@ -448,6 +451,12 @@ function __wbg_get_imports() {
         const ret = arg0.left;
         return ret;
     };
+    imports.wbg.__wbg_lineTo_1e83b5f2f38f15f9 = function(arg0, arg1, arg2) {
+        arg0.lineTo(arg1, arg2);
+    };
+    imports.wbg.__wbg_moveTo_8064f6a508217dcd = function(arg0, arg1, arg2) {
+        arg0.moveTo(arg1, arg2);
+    };
     imports.wbg.__wbg_new_8a6f238a6ece86ea = function() {
         const ret = new Error();
         return ret;
@@ -479,6 +488,9 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_set_height_89110f48f7fd0817 = function(arg0, arg1) {
         arg0.height = arg1 >>> 0;
     };
+    imports.wbg.__wbg_set_lineWidth_4059ac6bb1d807f8 = function(arg0, arg1) {
+        arg0.lineWidth = arg1;
+    };
     imports.wbg.__wbg_set_onclick_c8804e02c9e814a7 = function(arg0, arg1) {
         arg0.onclick = arg1;
     };
@@ -496,6 +508,9 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbg_set_onpointerup_9af2fa190aa73ba5 = function(arg0, arg1) {
         arg0.onpointerup = arg1;
+    };
+    imports.wbg.__wbg_set_strokeStyle_4d716c7d92c95b45 = function(arg0, arg1) {
+        arg0.strokeStyle = arg1;
     };
     imports.wbg.__wbg_set_textContent_12af0b0f84feb710 = function(arg0, arg1, arg2) {
         arg0.textContent = arg1 === 0 ? undefined : getStringFromWasm0(arg1, arg2);
@@ -525,6 +540,9 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_static_accessor_WINDOW_b45bfc5a37f6cfa2 = function() {
         const ret = typeof window === 'undefined' ? null : window;
         return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
+    };
+    imports.wbg.__wbg_stroke_2d2420886d092225 = function(arg0) {
+        arg0.stroke();
     };
     imports.wbg.__wbg_top_e4eeead6b19051fb = function(arg0) {
         const ret = arg0.top;

@@ -68,7 +68,30 @@ impl Universe {
 			}
 		}
 	}
+	
+	pub fn draw_grid(&self, ctx: &CanvasRenderingContext2d, cell_size: f64) {
+		ctx.set_stroke_style(&JsValue::from_str("#444"));
+		ctx.set_line_width(1.0);
 
+		let width = self.width as f64;
+		let height = self.height as f64;
+
+		for col in 0..self.width {
+			let x = (col as f64) * cell_size;
+			ctx.begin_path();
+			ctx.move_to(x, 0.0);
+			ctx.line_to(x, height * cell_size);
+			ctx.stroke();
+		}
+
+		for row in 0..=self.height {
+			let y = (row as f64) * cell_size;
+			ctx.begin_path();
+			ctx.move_to(0.0, y);
+			ctx.line_to(width * cell_size, y);
+			ctx.stroke();
+		}
+	}
 	pub fn toggle_cell(&mut self, row: u32, col: u32) {
 		let idx = self.get_index(row, col);
 		self.cells[idx] = match self.cells[idx] {
@@ -306,6 +329,9 @@ pub fn start() -> Result<(), JsValue> {
 		ctx_rc.clear_rect(0.0, 0.0, width, height);
 		uni_rc.borrow().draw(&ctx_rc, cell_size);
 
+		uni_rc.borrow().draw(&ctx_rc, cell_size);
+		uni_rc.borrow().draw_grid(&ctx_rc, cell_size);
+		
 		let borrow = raf_handle_clone.borrow();
 		let cb = borrow
 			.as_ref()

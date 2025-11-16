@@ -6,8 +6,8 @@
 		<title>Rust Game of Life</title>
 		
 <script type="module">
-import init, * as bindings from '/game-of-life-e13f12278a59d711.js';
-const wasm = await init({ module_or_path: '/game-of-life-e13f12278a59d711_bg.wasm' });
+import init, * as bindings from '/game-of-life-cdcd231e2827b909.js';
+const wasm = await init({ module_or_path: '/game-of-life-cdcd231e2827b909_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -19,25 +19,31 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
 		<style>
 			body {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				justify-content: center;
+				color: green;
 				background-color: #111;
 			}
+			#game-container {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+
+				display: flex;
+				flex-direction: column;
+				algin-items: center;
+			}		
 		</style>
-	<link rel="modulepreload" href="/game-of-life-e13f12278a59d711.js" crossorigin="anonymous" integrity="sha384-ucrqIvJriYvc8meI/RMubIMJ/2r7HgB+TmYUio8BOkgQcd2Yv6ShqyniPqy4xvFL"><link rel="preload" href="/game-of-life-e13f12278a59d711_bg.wasm" crossorigin="anonymous" integrity="sha384-5wuXTOfenBPAsxhM8gugXnzotAfOQT5kVaQTY+MoeAJGXOKb8sBbTYdqM30yHH3m" as="fetch" type="application/wasm"></head>
+	<link rel="modulepreload" href="/game-of-life-cdcd231e2827b909.js" crossorigin="anonymous" integrity="sha384-X62Y7wwqozugLC3ENa3MjDisuH9hQMnkEQ2vBx95DyzGWIKMtsxwfuGpB9rWVP+w"><link rel="preload" href="/game-of-life-cdcd231e2827b909_bg.wasm" crossorigin="anonymous" integrity="sha384-kQrIy01hnttMOEgi+RLRax04NmfYOmtCtk2N/bfH7vGL8g+IfPCUAwOdFf8FeyzM" as="fetch" type="application/wasm"></head>
 
 	
 	<body>
-		<button id="play-pause">Pause</button>
-		<canvas id="game-of-life-canvas"></canvas>
-		
+	
+		<p>Left click & drag to create new cells.</p>
+		<p>Right click & drag to kill cells.</p>
+		<div id="game-container">
+			<button id="play-pause">Pause</button>
+			<canvas id="game-of-life-canvas"></canvas>
+		</div>
 	<script>"use strict";
 
 (function () {

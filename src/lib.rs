@@ -25,6 +25,7 @@ pub enum Pattern {
 	Glider,
 	SmallExploder,
 	FiveOneOval,
+	GosperGliderGun,
 }
 
 pub enum Tool {
@@ -130,7 +131,17 @@ impl Universe {
 				(0, 1), (6, 1),
 				(1, 2), (2, 2), (3, 2), (4, 2), (5, 2),
 			],
-			// _ => todo!("finish implementing patterns"),
+			Pattern::GosperGliderGun => &[
+				(24, 0),
+				(22, 1), (24, 1),
+				(12, 2), (13, 2), (20, 2), (21, 2), (34, 2), (35, 2),
+				(11, 3), (15, 3), (20, 3), (21, 3), (34, 3), (35, 3), 
+				(0, 4), (1, 4), (10, 4), (16, 4), (20, 4), (21, 4), 
+				(0, 5), (1, 5), (10, 5), (14, 5), (16, 5), (17, 5), (22, 5), (24, 5),
+				(10, 6), (16, 6), (24, 6),
+				(11, 7), (15, 7),
+				(12, 8), (13, 8),
+			]
 		}
 	}
 
@@ -392,7 +403,10 @@ pub fn start() -> Result<(), JsValue> {
 		.get_element_by_id("tool-five-one-oval")
 		.unwrap()
 		.dyn_into::<HtmlButtonElement>()?;
-
+	let gosper_glider_gun_btn = document 
+		.get_element_by_id("tool-gosper-glider-gun")
+		.unwrap()
+		.dyn_into::<HtmlButtonElement>()?;
 
 	let tool_for_paint = tool.clone();
 	let on_paint_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
@@ -417,12 +431,21 @@ pub fn start() -> Result<(), JsValue> {
 	exploder_btn.set_onclick(Some(on_exploder_click.as_ref().unchecked_ref()));
 	on_exploder_click.forget();
 
+
 	let tool_for_five_one_oval = tool.clone();
 	let on_five_one_oval_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
 		*tool_for_five_one_oval.borrow_mut() = Tool::Stamp(Pattern::FiveOneOval);
 	}) as Box<dyn FnMut(_)>);
 	five_one_oval_btn.set_onclick(Some(on_five_one_oval_click.as_ref().unchecked_ref()));
 	on_five_one_oval_click.forget();
+
+
+	let tool_for_gosper_glider_gun = tool.clone();
+	let on_gosper_glider_gun_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
+		*tool_for_gosper_glider_gun.borrow_mut() = Tool::Stamp(Pattern::GosperGliderGun);
+	}) as Box<dyn FnMut(_)>);
+	gosper_glider_gun_btn.set_onclick(Some(on_gosper_glider_gun_click.as_ref().unchecked_ref()));
+	on_gosper_glider_gun_click.forget();
 	
 	let raf_handle: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
 	let raf_handle_clone = raf_handle.clone();

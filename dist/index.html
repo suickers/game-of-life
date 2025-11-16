@@ -6,8 +6,8 @@
 		<title>Rust Game of Life</title>
 		
 <script type="module">
-import init, * as bindings from '/game-of-life-28722e1b1fb3f138.js';
-const wasm = await init({ module_or_path: '/game-of-life-28722e1b1fb3f138_bg.wasm' });
+import init, * as bindings from '/game-of-life-e08c103ddb961816.js';
+const wasm = await init({ module_or_path: '/game-of-life-e08c103ddb961816_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -31,11 +31,13 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 				background-color: #111;
 			}
 		</style>
-	<link rel="modulepreload" href="/game-of-life-28722e1b1fb3f138.js" crossorigin="anonymous" integrity="sha384-vHvLSmrwWMcTSMZM7UDq1/Hx/0RGk+sQVnISPgqWA2M0UGVrtDJTNji/2UIyaNYv"><link rel="preload" href="/game-of-life-28722e1b1fb3f138_bg.wasm" crossorigin="anonymous" integrity="sha384-EL3kzm8ywF73rVvnkQ4q7o8xyumdTmrJX7tYg1mJlkDvzFElvXxcXv+cH7MKX3uB" as="fetch" type="application/wasm"></head>
+	<link rel="modulepreload" href="/game-of-life-e08c103ddb961816.js" crossorigin="anonymous" integrity="sha384-AajIfkW3gYtNtfF65Ln7qFeyyiG/JGpau5vykvHGoQA4t0JlXBIDGu2B236qQuFX"><link rel="preload" href="/game-of-life-e08c103ddb961816_bg.wasm" crossorigin="anonymous" integrity="sha384-W+xOfK0Lmb8NxTP6FOplzM3kWPYXg0OxSmaXchRlWX85UQScCFCtj0TW22J7bLdQ" as="fetch" type="application/wasm"></head>
 
 	
 	<body>
+		<button id="play-pause">Pause</button>
 		<canvas id="game-of-life-canvas"></canvas>
+		
 	<script>"use strict";
 
 (function () {

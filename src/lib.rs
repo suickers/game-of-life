@@ -1,10 +1,15 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::closure::Closure;
-use web_sys::{window, HtmlCanvasElement, CanvasRenderingContext2d};
+use web_sys::{
+	window, 
+	HtmlCanvasElement, 
+	CanvasRenderingContext2d,
+	HtmlButtonElement,
+	MouseEvent,
+};
 use std::cell::RefCell;
 use std::rc::Rc;
-// use std::fmt; 
 
 #[wasm_bindgen]
 #[repr(u8)]
@@ -51,7 +56,7 @@ impl Universe {
 				if self.cells[idx] == Cell::Alive {
 					ctx.set_fill_style(&JsValue::from_str("black"));
 				} else {
-					ctx.set_fill_style(&JsValue::from_str("white"));
+					ctx.set_fill_style(&JsValue::from_str("grey"));
 				}
 				ctx.fill_rect(
 					(col as f64) * cell_size,
@@ -90,8 +95,8 @@ impl Universe {
 	}
 
 	pub fn new() -> Self {
-		let width = 64;
-		let height = 64;
+		let width = 150;
+		let height = 150;
 
 		let cells = (0..width * height)
 			.map(|i| {
@@ -109,24 +114,7 @@ impl Universe {
 			cells,
 		}
 	}
-
-	// pub fn render(&self) -> String {
-	// 	self.to_string()
-	// }
 }
-
-// impl fmt::Display for Universe {
-// 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-// 		for line in self.cells.as_slice().chunks(self.width as usize) {
-// 			for &cell in line {
-// 				let symbol = if cell == Cell::Dead { '◻' } else { '◼' };
-// 				write!(f, "{}", symbol)?;
-// 			}
-// 			write!(f, "/n")?;
-// 		}
-// 		Ok(())
-// 	}
-// }
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
@@ -148,32 +136,48 @@ pub fn start() -> Result<(), JsValue> {
 		.get_context("2d")?
 		.unwrap()
 		.dyn_into::<CanvasRenderingContext2d>()?;
-
+	
 	let universe = Rc::new(RefCell::new(universe));
 	let ctx = Rc::new(ctx);
 
-	let raf_handle: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
+	let button = document
+		.get_element_by_id("play-pause")
+		.unwrap()
+		.dyn_into::<HtmlButtonElement>()?;
+
+	let running = Rc::new(RefCell::new(true));
+
+	let running_for_click = running.clone();
+	let button_for_click = button.clone();
+	let on_click = Closure::wrap(Box::new(move |_e: MouseEvent| {
+		let mut r = running_for_click.borrow_mut();
+		*r = !*r;
+		button_for_click.set_text_content(Some(if *r { "Pause" } else { "Play" }));
+	}) as Box<dyn FnMut(_)>);
 	
+	button.set_onclick(Some(on_click.as_ref().unchecked_ref()));
+	on_click.forget();
+
+	
+	let raf_handle: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
 	let raf_handle_clone = raf_handle.clone();
 	let uni_rc = universe.clone();
 	let ctx_rc = ctx.clone();
-
 	let mut frame_count = 0;
+	let running_rc = running.clone();
 	
 	*raf_handle.borrow_mut() = Some(Closure::wrap(Box::new(move || {
 		frame_count += 1;
 
-		if frame_count % 15 == 0 {
+		if *running_rc.borrow() && frame_count % 5 == 0 {
 			uni_rc.borrow_mut().tick();
-		}
-		
+		}	
 		
 		let width = ctx_rc.canvas().unwrap().width() as f64;
 		let height = ctx_rc.canvas().unwrap().height() as f64;
 		ctx_rc.clear_rect(0.0, 0.0, width, height);
 		uni_rc.borrow().draw(&ctx_rc, cell_size);
 
-		
 		let borrow = raf_handle_clone.borrow();
 		let cb = borrow
 			.as_ref()

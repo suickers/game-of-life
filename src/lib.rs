@@ -7,6 +7,7 @@ use web_sys::{
 	CanvasRenderingContext2d,
 	HtmlButtonElement,
 	MouseEvent,
+	PointerEvent,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -56,7 +57,7 @@ impl Universe {
 				if self.cells[idx] == Cell::Alive {
 					ctx.set_fill_style(&JsValue::from_str("black"));
 				} else {
-					ctx.set_fill_style(&JsValue::from_str("grey"));
+					ctx.set_fill_style(&JsValue::from_str("white"));
 				}
 				ctx.fill_rect(
 					(col as f64) * cell_size,
@@ -107,13 +108,7 @@ impl Universe {
 		let height = 150;
 
 		let cells = (0..width * height)
-			.map(|i| {
-				if i % 2 == 0 || i % 7 == 0 {
-					Cell::Alive
-				} else {
-					Cell::Dead
-				}
-			})
+			.map(|_| Cell::Dead)
 			.collect();
 
 		Self {
@@ -137,8 +132,8 @@ pub fn start() -> Result<(), JsValue> {
 	let universe = Universe::new();
 	let cell_size: f64 = 8.0;
 
-	canvas.set_width((universe.width * cell_size as u32) as u32);
-	canvas.set_height((universe.height * cell_size as u32) as u32);
+	canvas.set_width(universe.width * cell_size as u32);
+	canvas.set_height(universe.height * cell_size as u32);
 
 	let ctx = canvas 
 		.get_context("2d")?
@@ -149,31 +144,126 @@ pub fn start() -> Result<(), JsValue> {
 	let ctx = Rc::new(ctx);
 
 	let uni_for_click = universe.clone();
-	let canvas_for_click = canvas.clone();
+// 	let canvas_for_click = canvas.clone();
 	let cell_size_click = cell_size;
+// 
+// 	let on_canvas_click = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+// 		let rect = canvas_for_click
+// 			.dyn_ref::<web_sys::Element>()
+// 			.unwrap()
+// 			.get_bounding_client_rect();
+// 		
+// 		let scale_x = canvas_for_click.width() as f64 / rect.width();
+// 		let scale_y = canvas_for_click.height() as f64 / rect.height();
+// 
+// 		let canvas_x = (event.client_x() as f64 - rect.left()) * scale_x;
+// 		let canvas_y = (event.client_y() as f64 - rect.top()) * scale_y;
+// 
+// 		let col = (canvas_x / cell_size_click).floor() as u32;
+// 		let row = (canvas_y / cell_size_click).floor() as u32;
+// 
+// 		if row < uni_for_click.borrow().height && col < uni_for_click.borrow().width {
+// 			uni_for_click.borrow_mut().toggle_cell(row, col);
+// 		}
+// 	}) as Box<dyn FnMut(_)>);
+// 
+// 	canvas.set_onclick(Some(on_canvas_click.as_ref().unchecked_ref()));
+// 	on_canvas_click.forget();
 
-	let on_canvas_click = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-		let rect = canvas_for_click
-			.dyn_ref::<web_sys::Element>()
-			.unwrap()
+	let canvas_for_down  = canvas.clone();
+	let canvas_for_move  = canvas.clone();
+	let canvas_for_up    = canvas.clone();
+
+
+	
+	let drag_mode: Rc<RefCell<Option<Cell>>> = Rc::new(RefCell::new(None));
+
+	// let uni_for_ptr = universe.clone();
+	// let canvas_for_ptr = canvas.clone();
+	// let drag_for_ptr = drag_mode.clone();
+	// let cell_size_ptr = cell_size;
+
+	let drag_for_down = drag_mode.clone();
+	
+	let on_pointer_down = Closure::wrap(Box::new(move |e: PointerEvent| {
+	
+		let paint_to = if e.button() == 2 { Cell::Dead } else { Cell::Alive };
+		*drag_for_down.borrow_mut() = Some(paint_to);
+
+		canvas_for_down.set_pointer_capture(e.pointer_id()).ok();
+
+		let rect = canvas_for_down
+			.dyn_ref::<web_sys::Element>().unwrap()
 			.get_bounding_client_rect();
+
+		let sx = canvas_for_down.width() as f64 / rect.width();
+		let sy = canvas_for_down.height() as f64 / rect.height();
 		
-		let scale_x = canvas_for_click.width() as f64 / rect.width();
-		let scale_y = canvas_for_click.height() as f64 / rect.height();
-
-		let canvas_x = (event.client_x() as f64 - rect.left()) * scale_x;
-		let canvas_y = (event.client_y() as f64 - rect.top()) * scale_y;
-
-		let col = (canvas_x / cell_size_click).floor() as u32;
-		let row = (canvas_y / cell_size_click).floor() as u32;
+		let x = (e.client_x() as f64 - rect.left()) * sx;
+		let y = (e.client_y() as f64 - rect.top()) * sy;
+		let col = (x / cell_size_click).floor() as u32;
+		let row = (y / cell_size_click).floor() as u32;
 
 		if row < uni_for_click.borrow().height && col < uni_for_click.borrow().width {
 			uni_for_click.borrow_mut().toggle_cell(row, col);
 		}
 	}) as Box<dyn FnMut(_)>);
 
-	canvas.set_onclick(Some(on_canvas_click.as_ref().unchecked_ref()));
-	on_canvas_click.forget();
+	let uni_for_move = universe.clone();
+	// let canvas_for_move = canvas.clone();
+	let drag_for_move = drag_mode.clone();
+	// let cell_size_move = cell_size;
+
+	let on_pointer_move = Closure::wrap(Box::new(move |e: PointerEvent| {
+		if let Some(paint_to) = *drag_for_move.borrow() {
+			let rect = canvas_for_move
+				.dyn_ref::<web_sys::Element>().unwrap()
+				.get_bounding_client_rect();
+
+			let sx = canvas_for_move.width() as f64 / rect.width();
+			let sy = canvas_for_move.height() as f64 / rect.height();
+			
+			let x = (e.client_x() as f64 - rect.left()) * sx;
+			let y = (e.client_y() as f64 - rect.top()) * sy;
+			let col = (x / cell_size_click).floor() as u32;
+			let row = (y / cell_size_click).floor() as u32;
+
+			if row < uni_for_move.borrow().height && col < uni_for_move.borrow().width {
+				let mut u = uni_for_move.borrow_mut();
+				let idx = u.get_index(row, col);
+				u.cells[idx] = paint_to;
+			}
+		}
+	}) as Box<dyn FnMut(_)>);
+
+	let drag_for_up = drag_mode.clone();
+	// let canvas_for_up = canvas.clone();
+	
+	let on_pointer_up = Closure::wrap(Box::new(move |e: PointerEvent| {
+		*drag_for_up.borrow_mut() = None;
+		canvas_for_up.release_pointer_capture(e.pointer_id()).ok();
+	}) as Box<dyn FnMut(_)>);
+
+	let drag_for_leave = drag_mode.clone();
+	let on_pointer_leave = Closure::wrap(Box::new(move |_e: PointerEvent| {
+		*drag_for_leave.borrow_mut() = None;
+	}) as Box<dyn FnMut(_)>);
+
+	canvas.set_onpointerdown(Some(on_pointer_down.as_ref().unchecked_ref()));
+	canvas.set_onpointermove(Some(on_pointer_move.as_ref().unchecked_ref()));
+	canvas.set_onpointerup(Some(on_pointer_up.as_ref().unchecked_ref()));
+	canvas.set_onpointerleave(Some(on_pointer_leave.as_ref().unchecked_ref()));
+	on_pointer_down.forget();
+	on_pointer_move.forget();
+	on_pointer_up.forget();
+	on_pointer_leave.forget();
+
+	let canvas_for_ctx = canvas.clone();
+	let on_context_menu = Closure::wrap(Box::new(move |e: web_sys::Event| {
+		e.prevent_default();
+	}) as Box<dyn FnMut(_)>);
+	canvas_for_ctx.set_oncontextmenu(Some(on_context_menu.as_ref().unchecked_ref()));
+	on_context_menu.forget();
 	
 	let button = document
 		.get_element_by_id("play-pause")
@@ -189,6 +279,7 @@ pub fn start() -> Result<(), JsValue> {
 		*r = !*r;
 		button_for_click.set_text_content(Some(if *r { "Pause" } else { "Play" }));
 	}) as Box<dyn FnMut(_)>);
+
 	
 	button.set_onclick(Some(on_click.as_ref().unchecked_ref()));
 	on_click.forget();
@@ -196,8 +287,10 @@ pub fn start() -> Result<(), JsValue> {
 	
 	let raf_handle: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
 	let raf_handle_clone = raf_handle.clone();
+	
 	let uni_rc = universe.clone();
 	let ctx_rc = ctx.clone();
+	
 	let mut frame_count = 0;
 	let running_rc = running.clone();
 	
@@ -223,6 +316,8 @@ pub fn start() -> Result<(), JsValue> {
 		window().unwrap().request_animation_frame(cb).unwrap();
 		
 	}) as Box<dyn FnMut()>));
+
+
 
 	let borrow = raf_handle.borrow();
 	let cb = borrow

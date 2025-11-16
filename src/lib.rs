@@ -228,7 +228,9 @@ pub fn start() -> Result<(), JsValue> {
 		let row = (y / cell_size_click).floor() as u32;
 
 		if row < uni_for_click.borrow().height && col < uni_for_click.borrow().width {
-			uni_for_click.borrow_mut().toggle_cell(row, col);
+			let mut u = uni_for_click.borrow_mut();
+			let idx = u.get_index(row, col);
+			u.cells[idx] = paint_to;
 		}
 	}) as Box<dyn FnMut(_)>);
 

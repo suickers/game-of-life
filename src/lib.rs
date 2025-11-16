@@ -67,6 +67,14 @@ impl Universe {
 			}
 		}
 	}
+
+	pub fn toggle_cell(&mut self, row: u32, col: u32) {
+		let idx = self.get_index(row, col);
+		self.cells[idx] = match self.cells[idx] {
+			Cell::Alive => Cell::Dead,
+			Cell::Dead => Cell::Alive,
+		}
+	}
 }
 
 #[wasm_bindgen]
@@ -140,6 +148,33 @@ pub fn start() -> Result<(), JsValue> {
 	let universe = Rc::new(RefCell::new(universe));
 	let ctx = Rc::new(ctx);
 
+	let uni_for_click = universe.clone();
+	let canvas_for_click = canvas.clone();
+	let cell_size_click = cell_size;
+
+	let on_canvas_click = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+		let rect = canvas_for_click
+			.dyn_ref::<web_sys::Element>()
+			.unwrap()
+			.get_bounding_client_rect();
+		
+		let scale_x = canvas_for_click.width() as f64 / rect.width();
+		let scale_y = canvas_for_click.height() as f64 / rect.height();
+
+		let canvas_x = (event.client_x() as f64 - rect.left()) * scale_x;
+		let canvas_y = (event.client_y() as f64 - rect.top()) * scale_y;
+
+		let col = (canvas_x / cell_size_click).floor() as u32;
+		let row = (canvas_y / cell_size_click).floor() as u32;
+
+		if row < uni_for_click.borrow().height && col < uni_for_click.borrow().width {
+			uni_for_click.borrow_mut().toggle_cell(row, col);
+		}
+	}) as Box<dyn FnMut(_)>);
+
+	canvas.set_onclick(Some(on_canvas_click.as_ref().unchecked_ref()));
+	on_canvas_click.forget();
+	
 	let button = document
 		.get_element_by_id("play-pause")
 		.unwrap()
